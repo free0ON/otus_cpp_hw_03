@@ -85,5 +85,5 @@ public:
 
     static const int value = 1;
 };
-#endif ALLOCATOR_TFACTORIAL_H
+#endif //ALLOCATOR_TFACTORIAL_H
 

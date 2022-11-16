@@ -8,15 +8,8 @@
 #include <memory>
 #include <iostream>
 
-//#undef USE_PRETTY
-
-//#ifdef USE_PRETTY
 #define ALLOC_PRETTY_INFO(n) std::cout << __PRETTY_FUNCTION__ << "[n = " << n << "]" << std::endl;
 #define PRETTY_INFO()  std::cout << __PRETTY_FUNCTION__ << std::endl;
-//#else
-//    #define ALLOC_PRETTY_INFO(n)
-//    #define PRETTY_INFO()
-//#endif
 
 class TAbstractTag
 {
