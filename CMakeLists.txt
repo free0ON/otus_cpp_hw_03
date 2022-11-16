@@ -65,9 +65,9 @@ if (MSVC)
 
 else()
     target_compile_options(${PRJ_NAME} PRIVATE
-            -Wall -Wextra -pedantic -Wfatal-errors)
+            -Wall -Wextra -pedantic -Werror)
     target_compile_options(${TEST_NAME} PRIVATE
-            -Wall -Wextra -pedantic -Wfatal-errors)
+            -Wall -Wextra -pedantic -Werror)
 
 endif(MSVC)
 

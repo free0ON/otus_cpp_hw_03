@@ -127,7 +127,7 @@ public:
      * @return
      */
     [[nodiscard]]
-    pointer allocate(size_type n, const_void_pointer cvp = 0)
+    pointer allocate(size_type n /*, const_void_pointer cvp = 0*/)
     {
         if(typeid(debug_tag) == typeid(TDebugInfoTag))
             DebugInfo(FunctionType::allocate, n);

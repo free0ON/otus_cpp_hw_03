@@ -9,7 +9,10 @@
 #include <utility>
 #include <iostream>
 
-int Factorial(int i);
+constexpr int Factorial(int i)
+{
+    return (i == 0) || (i == 1)? 1: i * Factorial(i - 1);
+}
 
 template<typename T>
 T InitFactorialMap(int n) {
@@ -18,7 +21,7 @@ T InitFactorialMap(int n) {
     {
         InitList.insert({i, Factorial(i)});
     }
-    return std::move(InitList);
+    return InitList; // moving a local object in a return statement prevents copy elision
 }
 
 template<typename T>
@@ -32,7 +35,7 @@ T InitFactorialVector(int n) {
     catch(...) {
         std::cout << "error" << std::endl;
     }
-    return std::move(InitList);
+    return InitList; // moving a local object in a return statement prevents copy elision
 }
 template <typename T>
 static void PrintMap(std::string_view header, T& map)
@@ -48,7 +51,7 @@ template <typename T>
 static void PrintVector(std::string_view header, T& vec)
 {
     std::cout << header << std::endl;
-    for(int i = 0; i < vec.size(); ++i)
+    for(size_t i = 0; i < vec.size(); ++i)
     {
         std::cout << i << " " << vec[i] << std::endl;
     }
@@ -59,7 +62,8 @@ class TFactorial {
 public:
     static const int value = (p > 0)? p * TFactorial<(p-1)>::value:0;
 public:
-static int get()
+
+    static int get()
     {
         return value;
     }
@@ -73,6 +77,7 @@ static int get()
 template<>
 class TFactorial<0> {
 public:
+    static const int value = 1;
     static auto get()
     {
         return value;
@@ -82,8 +87,7 @@ public:
     {
         return {0, value};
     }
-
-    static const int value = 1;
 };
+
 #endif //ALLOCATOR_TFACTORIAL_H
 

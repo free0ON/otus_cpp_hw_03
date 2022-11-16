@@ -51,7 +51,7 @@ TEST(allocator, bad_alloc_custom_container_allocated) {
                      try {
                          BigCustomVectorAllocated BigAllocatedVector(MaxSize, 0);
                      }
-                     catch (std::bad_alloc e)
+                     catch (const std::exception& e)
                      {
                          EXPECT_TRUE(typeid(e) == typeid(std::bad_alloc));
                          std::cout << e.what();
