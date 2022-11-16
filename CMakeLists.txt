@@ -20,7 +20,7 @@ message("CMAKE_MINIMUM_REQUIRED_VERSION: ${CMAKE_MINIMUM_REQUIRED_VERSION}")
 configure_file(src/version.h.in version.h)
 
 add_executable(${PRJ_NAME} src/main.cpp src/TFactorial.cpp src/TFactorial.h src/TAllocator.cpp src/TAllocator.h src/TVector.cpp src/TVector.h)
-add_executable(${TEST_NAME} test/test_all.cpp src/main.cpp src/TFactorial.cpp src/TFactorial.h src/TAllocator.cpp src/TAllocator.h src/TVector.cpp src/TVector.h)
+add_executable(${TEST_NAME} test/test_all.cpp src/TFactorial.cpp src/TFactorial.h src/TAllocator.cpp src/TAllocator.h src/TVector.cpp src/TVector.h)
 set_target_properties(${PRJ_NAME} ${TEST_NAME} PROPERTIES
         CXX_STANDARD 17
         CXX_STANDARD_REQUIRED ON
