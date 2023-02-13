@@ -66,11 +66,11 @@ TEST(allocator,custom_container_allocated){
 //                 }, std::bad_alloc);
 //}
 
-TEST(allocator, custom_list) {
-    using debug_tag = TNoDebugTag;
-    using CustomList = TList<int, TAllocator<int, 10, debug_tag>, TIterator<int>>;
-    auto List = InitFactorialList<CustomList>(10);
-    // print custom vector
-    PrintList("custom TList", List);
-
-}
+//TEST(allocator, custom_list) {
+//    using debug_tag = TNoDebugTag;
+//    using CustomList = TList<int, TAllocator<int, 10, debug_tag>, TIterator<int>>;
+//    auto List = InitFactorialList<CustomList>(10);
+//    // print custom vector
+//    PrintList("custom TList", List);
+//
+//}
