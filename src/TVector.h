@@ -45,6 +45,7 @@ public:
 
     void reserve(size_t n) {
         if (n <= cap) return;
+        //TODO: allocation problem with std::allocator
         T *new_arr = alloc.allocate(n);
         if (new_arr == nullptr) throw std::bad_alloc();
         else {
