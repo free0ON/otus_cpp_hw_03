@@ -13,22 +13,18 @@
 
 class TAbstractTag
 {
-    TAbstractTag();
 };
 
 class TNoDebugTag : TAbstractTag
 {
-    TNoDebugTag();
 };
 
 class TPrettyTag: TAbstractTag
 {
-    TPrettyTag();
 };
 
 class TDebugInfoTag: TAbstractTag
 {
-    TDebugInfoTag();
 };
 
 
@@ -39,7 +35,6 @@ enum class FunctionType
 
 constexpr void DebugInfo(FunctionType type, size_t n = 0)
 {
-//#ifndef USE_PRETTY
     switch (type) {
         case(FunctionType::allocate): {
             std::cout << "allocate: [n = " << n << "]" << std::endl;
@@ -54,28 +49,17 @@ constexpr void DebugInfo(FunctionType type, size_t n = 0)
             std::cout << "destroy" << std::endl;
         }
     }
-//#endif
 }
 
-//template<typename T>
-//struct pointer_traits {
-//    using reference = T &;
-//    using const_reference = const T &;
-//};
-//
-//// Avoid declaring a reference to void with an empty specialization
-//template<>
-//struct pointer_traits<void> {
-//};
-
-template <typename T, typename TDebugTag = TNoDebugTag>
+template <typename T, size_t capasity, typename TDebugTag = TNoDebugTag>
 class TAllocator {
     static_assert(!std::is_same_v<T, void>, "Type of the allocator can not be void");
 public:
     using debug_tag = TDebugTag; // debug tag
     using value_type = T; // required
 
-    using pointer = T *; // optional
+    using pointer = T *;
+        // optional
         // Satisfies NullablePointer, LegacyRandomAccessIterator,
         // and LegacyContiguousIterator.
     using const_pointer = const T *; // optional
@@ -99,20 +83,19 @@ public:
     // where Args is zero or more additional template type parameters.
     template<typename U> // optional For any U, B::template rebind<T>::other is A.
     struct rebind {
-        using other = TAllocator<U, TDebugTag>;
+        using other = TAllocator<U, capasity, TDebugTag>;
     };
 
-    TAllocator() noexcept {}
-
-    TAllocator(size_t n)
-    {
-        allocate(n);
+    TAllocator() noexcept {
+        UsedMemory = 0;
+        ReservedMemory = nullptr;
     }
 
-    ~TAllocator() noexcept {};
+    ~TAllocator() noexcept {
+    };
 
     template<typename U>
-    TAllocator(const TAllocator<U, TDebugTag> &) noexcept {
+    TAllocator(const TAllocator<U, capasity, TDebugTag> &) noexcept {
 
     }
 
@@ -129,16 +112,22 @@ public:
     [[nodiscard]]
     pointer allocate(size_type n /*, const_void_pointer cvp = 0*/)
     {
-        if(typeid(debug_tag) == typeid(TDebugInfoTag))
-            DebugInfo(FunctionType::allocate, n);
-        if(typeid(debug_tag) == typeid(TPrettyTag))
-            ALLOC_PRETTY_INFO(n);
-        auto p = std::malloc(n * sizeof(value_type));
-        if (!p)
+        if (n > capasity) // size is bigger then capasity
             throw std::bad_alloc();
-        return reinterpret_cast<pointer>(p);
-
+        else if(ReservedMemory == nullptr) { // memory not reserved yet
+            ReservedMemory = TryToReserveMemory(capasity);
+            if ( ReservedMemory != nullptr) {
+                // all memory reserved
+                if (typeid(debug_tag) == typeid(TDebugInfoTag))
+                    DebugInfo(FunctionType::allocate, capasity);
+                if (typeid(debug_tag) == typeid(TPrettyTag))
+                    ALLOC_PRETTY_INFO(capasity);
+            }
+        }
+        return ReservedMemory + UsedMemory;
     }
+
+
     /** required
      * Deallocates storage pointed to p, which must be a value returned by a previous call to allocate
      * or allocate_at_least (since C++23) that has not been invalidated by an intervening call to deallocate.
@@ -148,13 +137,17 @@ public:
      * @param p
      * @param n
      */
-    void deallocate(pointer p, size_type n) noexcept
+    void deallocate(pointer p, size_type n)
     {
-        if(typeid(debug_tag) == typeid(TDebugInfoTag))
-            DebugInfo(FunctionType::deallocate, n);
-        if(typeid(debug_tag) == typeid(TPrettyTag))
-            ALLOC_PRETTY_INFO(n);
-        std::free(p);
+        if(ReservedMemory == nullptr || p == nullptr || n > capasity) // try to deallocate not reserved memory
+            throw std::bad_alloc();
+        else if (UsedMemory == 0) { // deallocate all reserved memory
+            if (typeid(debug_tag) == typeid(TDebugInfoTag))
+                DebugInfo(FunctionType::deallocate, capasity);
+            if (typeid(debug_tag) == typeid(TPrettyTag))
+                ALLOC_PRETTY_INFO(capasity);
+            std::free(ReservedMemory);
+        }
     }
 
     /** optional
@@ -168,12 +161,15 @@ public:
      * @param args - arguments ...
      */
     template <typename X, typename... Args>
-    void construct(X *xp, Args &&...args) const {
-        if(typeid(debug_tag) == typeid(TDebugInfoTag))
-            DebugInfo(FunctionType::construct);
-        if(typeid(debug_tag) == typeid(TPrettyTag))
-            PRETTY_INFO();
-        new (xp) X(std::forward<Args>(args)...); // placement new to create object at xp address
+    void construct(X *xp, Args &&...args) {
+        auto Result = new (xp) X(std::forward<Args>(args)...); // placement new to create object at xp address
+        if(Result != 0) {
+            ++UsedMemory;
+            if (typeid(debug_tag) == typeid(TDebugInfoTag))
+                DebugInfo(FunctionType::construct);
+            if (typeid(debug_tag) == typeid(TPrettyTag))
+                PRETTY_INFO();
+        }
     }
 
     /** optional
@@ -189,6 +185,7 @@ public:
         if(typeid(debug_tag) == typeid(TPrettyTag))
             PRETTY_INFO();
         xp->~X();
+        --UsedMemory;
     }
     /**
      *  The largest value that can be passed to A::allocate().
@@ -197,6 +194,27 @@ public:
         return size_type();
     }
 
+    /**
+     *
+     */
+
+private:
+   size_type UsedMemory;
+   pointer ReservedMemory;
+    /**
+     * Reserve memory n-blocks sizeof(value_type) length
+     * if malloc return nullptr - throw bad_alloc
+     * @param n - number of blocks
+     */
+    [[nodiscard]]
+    pointer TryToReserveMemory(size_t n)
+    {
+        pointer p = static_cast<pointer>(std::malloc(n * sizeof(value_type)));
+        if (p == nullptr) {
+            throw std::bad_alloc();
+        }
+        return p;
+    }
     /**
      *
      */

@@ -7,8 +7,8 @@
  * @return
  */
 template<typename T, typename U>
-constexpr bool operator==(const TAllocator<T> &,
-                          const TAllocator<U> &) noexcept
+constexpr bool operator==(const TAllocator<T, 0> &,
+                          const TAllocator<U, 0> &) noexcept
 {
     return true;
 }
@@ -20,8 +20,8 @@ constexpr bool operator==(const TAllocator<T> &,
  * @return
  */
 template<typename T, typename U>
-constexpr bool operator!=(const TAllocator<T> &,
-                          const TAllocator<U> &) noexcept
+constexpr bool operator!=(const TAllocator<T, 0> &,
+                          const TAllocator<U, 0> &) noexcept
 {
     return false;
 }
