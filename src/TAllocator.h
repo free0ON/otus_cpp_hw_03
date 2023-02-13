@@ -165,6 +165,7 @@ public:
         auto Result = new (xp) X(std::forward<Args>(args)...); // placement new to create object at xp address
         if(Result != 0) {
             ++UsedMemory;
+            std::cout << "pointer: " << xp << " " << UsedMemory << " " << ReservedMemory << " ";
             if (typeid(debug_tag) == typeid(TDebugInfoTag))
                 DebugInfo(FunctionType::construct);
             if (typeid(debug_tag) == typeid(TPrettyTag))
@@ -180,6 +181,7 @@ public:
      */
     template <typename X>
     void destroy(X *xp) {
+        std::cout << "pointer: " << xp << " " << UsedMemory << " " << ReservedMemory << " ";
         if(typeid(debug_tag) == typeid(TDebugInfoTag))
             DebugInfo(FunctionType::destroy);
         if(typeid(debug_tag) == typeid(TPrettyTag))

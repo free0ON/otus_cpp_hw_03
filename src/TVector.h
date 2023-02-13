@@ -11,7 +11,7 @@
 #include <stdexcept>
 #include <iterator>
 
-template<typename T, typename Alloc = std::allocator<T>, typename Iter = std::iterator<T, std::forward_iterator_tag>>
+template<typename T, typename Alloc = std::allocator<T>, typename Iter = std::iterator<T, std::random_access_iterator_tag>>
 class TVector {
 private:
     T *arr = nullptr;
@@ -21,13 +21,14 @@ private:
     Iter iter;
 public:
 
-    TVector(const Alloc &alloc = Alloc(), const Iter &iter = Iter()) : alloc(alloc), iter(iter) {
-        sz = 0;
-        cap = 0;
+    TVector(const Alloc &alloc = Alloc(),
+            const Iter &iter = Iter()) : alloc(alloc), iter(iter) {
     }
 
-    TVector(size_t count, const T &value, const Alloc &alloc = Alloc(), const Iter & = Iter()) : alloc(alloc),
-                                                                                                 iter(iter) {
+    TVector(size_t count,
+            const T &value,
+            const Alloc &alloc = Alloc(),
+            const Iter & = Iter()) : alloc(alloc), iter(iter) {
         cap = 0;
         reserve(count);
         for (size_t i = 0; i < count; ++i) {
@@ -43,10 +44,20 @@ public:
         return cap;
     }
 
+    const Iter& begin()
+    {
+        return iter;
+    }
+
+    const Iter& end()
+    {
+        return iter;
+    }
+
     void reserve(size_t n) {
         if (n <= cap) return;
         //TODO: allocation problem with std::allocator
-        T *new_arr = alloc.allocate(n);
+        T *new_arr = alloc.allocate(2*n);
         if (new_arr == nullptr) throw std::bad_alloc();
         else {
             if (new_arr != nullptr && arr != nullptr && new_arr != arr) {
