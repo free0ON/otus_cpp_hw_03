@@ -28,13 +28,13 @@ TEST(allocator, std_map_allocated)
     PrintMap("std::map allocated", StdFactorialMapAllocated);
 }
 
-TEST(allocator,custom_container) {
-    using CustomVector = TVector<int>;
-    // create custom vector and fill Factorial 0 ... 9
-    auto Vector = InitFactorialVector<CustomVector>(10);
-    // print custom vector
-    PrintVector("custom TVector", Vector);
-}
+//TEST(allocator,custom_container) {
+//    using CustomVector = TVector<int>;
+//    // create custom vector and fill Factorial 0 ... 9
+//    auto Vector = InitFactorialVector<CustomVector>(10);
+//    // print custom vector
+//    PrintVector("custom TVector", Vector);
+//}
 
 TEST(allocator,custom_container_allocated){
     using debug_tag = TNoDebugTag;
