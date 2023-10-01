@@ -1,5 +1,25 @@
 /**
  * template class Allocator
+ * 
+ * Stateful and stateless allocators
+ * Every Allocator type is either stateful or stateless. 
+ * Generally, a stateful allocator type can have unequal values 
+ * which denote distinct memory resources, while a stateless allocator 
+ * type denotes a single memory resource.
+ * Although custom allocators are not required to be stateless, 
+ * whether and how the use of stateful allocators in the standard library 
+ * is implementation-defined. Use of unequal allocator values may result 
+ * in implementation-defined runtime errors or undefined behavior 
+ * if the implementation does not support such usage.
+ * (until C++11)
+ * Custom allocators may contain state. 
+ * Each container or another allocator-aware object stores an instance 
+ * of the supplied allocator and controls allocator replacement through std::allocator_traits.
+ * (since C++11)
+ * Instances of a stateless allocator type always compare equal. Stateless allocator types 
+ * are typically implemented as empty classes and suitable for empty base class optimization.
+ * The member type is_always_equal of std::allocator_traits is intendedly used for determining 
+ * whether an allocator type is stateless.
  */
 #ifndef OTUS_CPP_HW_03_ALLOCATOR_H
 #define OTUS_CPP_HW_03_ALLOCATOR_H
@@ -86,6 +106,8 @@ public:
         using other = TAllocator<U, capasity, TDebugTag>;
     };
 
+    using is_always_equal = std::true_type;
+    
     TAllocator() noexcept {
         UsedMemory = 0;
         ReservedMemory = nullptr;
@@ -94,8 +116,12 @@ public:
     ~TAllocator() noexcept {
     };
 
+    /**
+     * Copy constructor
+     * @tparam U 
+     */
     template<typename U>
-    TAllocator(const TAllocator<U, capasity, TDebugTag> &) noexcept {
+    TAllocator(const TAllocator<U, capasity, TDebugTag> & other) noexcept {
 
     }
 
@@ -112,7 +138,7 @@ public:
     [[nodiscard]]
     pointer allocate(size_type n /*, const_void_pointer cvp = 0*/)
     {
-        if (n > capasity) // size is bigger then capasity
+        if (n > capasity || UsedMemory >= capasity) // size is bigger then capasity
             throw std::bad_alloc();
         else if(ReservedMemory == nullptr) { // memory not reserved yet
             ReservedMemory = TryToReserveMemory(capasity);
@@ -162,10 +188,10 @@ public:
      */
     template <typename X, typename... Args>
     void construct(X *xp, Args &&...args) {
-        auto Result = new (xp) X(std::forward<Args>(args)...); // placement new to create object at xp address
+        auto Result = ::new (static_cast<void*>(xp)) X(std::forward<Args>(args)...); // placement new to create object at xp address
         if(Result != 0) {
             ++UsedMemory;
-            std::cout << "pointer: " << xp << " " << UsedMemory << " " << ReservedMemory << " ";
+            std::cout << "pointer: " << xp << " " << UsedMemory << " in pull of " << capasity << "*" << sizeof (size_type) << " bytes " << " at " << ReservedMemory << " ";
             if (typeid(debug_tag) == typeid(TDebugInfoTag))
                 DebugInfo(FunctionType::construct);
             if (typeid(debug_tag) == typeid(TPrettyTag))
@@ -181,7 +207,7 @@ public:
      */
     template <typename X>
     void destroy(X *xp) {
-        std::cout << "pointer: " << xp << " " << UsedMemory << " " << ReservedMemory << " ";
+        std::cout << "pointer: " << xp << " " << UsedMemory << " of pull "<< capasity << "*" << sizeof (size_type) << " at " << ReservedMemory << " ";
         if(typeid(debug_tag) == typeid(TDebugInfoTag))
             DebugInfo(FunctionType::destroy);
         if(typeid(debug_tag) == typeid(TPrettyTag))

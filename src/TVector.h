@@ -25,17 +25,6 @@ public:
             const Iter &iter = Iter()) : alloc(alloc), iter(iter) {
     }
 
-    TVector(size_t count,
-            const T &value,
-            const Alloc &alloc = Alloc(),
-            const Iter & = Iter()) : alloc(alloc), iter(iter) {
-        cap = 0;
-        reserve(count);
-        for (size_t i = 0; i < count; ++i) {
-            alloc.construct(arr + i, value);
-        }
-    }
-
     size_t size() {
         return sz;
     }
@@ -57,7 +46,7 @@ public:
     void reserve(size_t n) {
         if (n <= cap) return;
         //TODO: allocation problem with std::allocator
-        T *new_arr = alloc.allocate(2*n);
+        T *new_arr = alloc.allocate(n);
         if (new_arr == nullptr) throw std::bad_alloc();
         else {
             if (new_arr != nullptr && arr != nullptr && new_arr != arr) {
