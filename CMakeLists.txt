@@ -11,20 +11,19 @@ set(PRJ_HOMEPAGE_URL "https://github.com/free0ON/otus_cpp_HW_03" CACHE INTERNAL 
 set(EMAIL_CONTACT "dmitrii.lozovoi@yandex.ru" CACHE INTERNAL "Email contact")
 set(TEST_NAME "test_all" CACHE INTERNAL "Test name")
 
-project(${PRJ_NAME} VERSION ${PRJ_VERSION_MAJOR}.${PRJ_VERSION_MINOR}.${PRJ_VERSION_PATCH} DESCRIPTION "${PRJ_DESCRIPTION}" HOMEPAGE_URL "${PRJ_HOMEPAGE_URL}")
-#message("PROJECT_NAME: ${PROJECT_NAME} VERSION: ${PROJECT_VERSION}")
-#message("DESCRIPTION: ${PRJ_DESCRIPTION}")
-#message("HOMEPAGE_URL: ${PRJ_HOMEPAGE_URL}")
-#message("CMAKE_MINIMUM_REQUIRED_VERSION: ${CMAKE_MINIMUM_REQUIRED_VERSION}")
+project(${PRJ_NAME} VERSION ${PRJ_VERSION_MAJOR}.${PRJ_VERSION_MINOR}.${PRJ_VERSION_PATCH}
+        DESCRIPTION "${PRJ_DESCRIPTION}" HOMEPAGE_URL "${PRJ_HOMEPAGE_URL}")
 
 configure_file(src/version.h.in version.h)
 
-add_executable(${PRJ_NAME} src/main.cpp src/TFactorial.cpp src/TFactorial.h
-        src/TAllocator.cpp src/TAllocator.h src/TVector.cpp src/TVector.h
-        src/TList.cpp src/TList.h src/TIterator.cpp src/TIterator.h)
-add_executable(${TEST_NAME} test/test_all.cpp src/TFactorial.cpp src/TFactorial.h
-        src/TAllocator.cpp src/TAllocator.h src/TVector.cpp src/TVector.h
-        src/TList.cpp src/TList.h)
+add_executable(${PRJ_NAME} src/main.cpp src/TFactorial.h
+        src/TAllocator.h src/TVector.h
+        src/TList.h
+        src/TRange.h)
+add_executable(${TEST_NAME} test/test_all.cpp src/TFactorial.h
+        src/TAllocator.h src/TVector.h
+        src/TList.h
+        src/TRange.h)
 set_target_properties(${PRJ_NAME} ${TEST_NAME} PROPERTIES
         CXX_STANDARD 17
         CXX_STANDARD_REQUIRED ON

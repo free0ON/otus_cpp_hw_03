@@ -1,5 +1,0 @@
-/**
- * TVector
- */
-
-#include "TVector.h"

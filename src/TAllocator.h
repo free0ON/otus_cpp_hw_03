@@ -57,57 +57,41 @@ constexpr void DebugInfo(FunctionType type, size_t n = 0)
 {
     switch (type) {
         case(FunctionType::allocate): {
-            std::cout << "allocate: [n = " << n << "]" << std::endl;
+            std::cout << "allocate: [n = " << n << "] " << std::endl;
         } break;
         case(FunctionType::deallocate):{
             std::cout << "deallocate: [n  = " << n << "] " << std::endl;
         } break;
         case(FunctionType::construct): {
-            std::cout << "construct" << std::endl;
+            std::cout << "construct ";
         } break;
         case (FunctionType::destroy):{
-            std::cout << "destroy" << std::endl;
+            std::cout << "destroy ";
         }
     }
 }
 
-template <typename T, size_t capasity, typename TDebugTag = TNoDebugTag>
+template <typename T, size_t capacity, typename TDebugTag = TNoDebugTag>
 class TAllocator {
     static_assert(!std::is_same_v<T, void>, "Type of the allocator can not be void");
+    static_assert(capacity != 0, "Zero capacity allocator");
 public:
     using debug_tag = TDebugTag; // debug tag
     using value_type = T; // required
 
-    using pointer = T *;
-        // optional
-        // Satisfies NullablePointer, LegacyRandomAccessIterator,
-        // and LegacyContiguousIterator.
-    using const_pointer = const T *; // optional
-        // Satisfies NullablePointer, LegacyRandomAccessIterator,
-        // and LegacyContiguousIterator. A::pointer is convertible to A::const_pointer.
-    using void_pointer = void *; // optional
-        // Satisfies NullablePointer.  A::pointer is convertible to A::void_pointer.
-        //B::void_pointer and A::void_pointer are the same type.
-    using const_void_pointer = const void *; // optional
-        // Satisfies NullablePointer.
-        // A::pointer, A::const_pointer, and A::void_pointer are convertible to A::const_void_pointer.
     using size_type = std::size_t; // optional
         // An unsigned integer type.
         // Can represent the size of the largest object A can allocate.
-    using difference_type = typename std::pointer_traits<pointer>::difference_type; // optional
+
+    using difference_type = typename std::pointer_traits<value_type*>::difference_type; // optional
         // A signed integer type.
         // Can represent the difference of any two pointers to the objects allocated by A.
 
-    // rebind is only optional (provided by std::allocator_traits)
-    // if this allocator is a template of the form SomeAllocator<T, Args>,
-    // where Args is zero or more additional template type parameters.
-    template<typename U> // optional For any U, B::template rebind<T>::other is A.
-    struct rebind {
-        using other = TAllocator<U, capasity, TDebugTag>;
-    };
-
-    using is_always_equal = std::true_type;
-    
+    template<class OtherType> // to change type of allocator.
+        //For example: list node and list value has different types
+            struct rebind{
+                typedef TAllocator<OtherType, capacity, TDebugTag> other;
+        };
     TAllocator() noexcept {
         UsedMemory = 0;
         ReservedMemory = nullptr;
@@ -121,7 +105,7 @@ public:
      * @tparam U 
      */
     template<typename U>
-    TAllocator(const TAllocator<U, capasity, TDebugTag> & other) noexcept {
+    TAllocator(const TAllocator<U, capacity, TDebugTag> & other) noexcept {
 
     }
 
@@ -136,18 +120,18 @@ public:
      * @return
      */
     [[nodiscard]]
-    pointer allocate(size_type n /*, const_void_pointer cvp = 0*/)
+    T* allocate(size_type n /*, const_void_pointer cvp = 0*/)
     {
-        if (n > capasity || UsedMemory >= capasity) // size is bigger then capasity
+        if (n > capacity || UsedMemory >= capacity) // size is bigger then capasity
             throw std::bad_alloc();
         else if(ReservedMemory == nullptr) { // memory not reserved yet
-            ReservedMemory = TryToReserveMemory(capasity);
+            ReservedMemory = TryToReserveMemory(capacity);
             if ( ReservedMemory != nullptr) {
                 // all memory reserved
                 if (typeid(debug_tag) == typeid(TDebugInfoTag))
-                    DebugInfo(FunctionType::allocate, capasity);
+                    DebugInfo(FunctionType::allocate, capacity);
                 if (typeid(debug_tag) == typeid(TPrettyTag))
-                    ALLOC_PRETTY_INFO(capasity);
+                    ALLOC_PRETTY_INFO(capacity);
             }
         }
         return ReservedMemory + UsedMemory;
@@ -163,15 +147,15 @@ public:
      * @param p
      * @param n
      */
-    void deallocate(pointer p, size_type n)
+    void deallocate(T* p, size_type n)
     {
-        if(ReservedMemory == nullptr || p == nullptr || n > capasity) // try to deallocate not reserved memory
+        if(ReservedMemory == nullptr || p == nullptr || n > capacity) // try to deallocate not reserved memory
             throw std::bad_alloc();
         else if (UsedMemory == 0) { // deallocate all reserved memory
             if (typeid(debug_tag) == typeid(TDebugInfoTag))
-                DebugInfo(FunctionType::deallocate, capasity);
+                DebugInfo(FunctionType::deallocate, capacity);
             if (typeid(debug_tag) == typeid(TPrettyTag))
-                ALLOC_PRETTY_INFO(capasity);
+                ALLOC_PRETTY_INFO(capacity);
             std::free(ReservedMemory);
         }
     }
@@ -191,11 +175,17 @@ public:
         auto Result = ::new (static_cast<void*>(xp)) X(std::forward<Args>(args)...); // placement new to create object at xp address
         if(Result != 0) {
             ++UsedMemory;
-            std::cout << "pointer: " << xp << " " << UsedMemory << " in pull of " << capasity << "*" << sizeof (size_type) << " bytes " << " at " << ReservedMemory << " ";
             if (typeid(debug_tag) == typeid(TDebugInfoTag))
+            {
+                std::cout << " pointer: " << xp
+                          << " " << UsedMemory << " bytes "
+                          << " in pull of " << capacity << "*" << sizeof (size_type) << " bytes "
+                          << " at " << ReservedMemory << std::endl;
                 DebugInfo(FunctionType::construct);
+            }
             if (typeid(debug_tag) == typeid(TPrettyTag))
                 PRETTY_INFO();
+
         }
     }
 
@@ -207,19 +197,19 @@ public:
      */
     template <typename X>
     void destroy(X *xp) {
-        std::cout << "pointer: " << xp << " " << UsedMemory << " of pull "<< capasity << "*" << sizeof (size_type) << " at " << ReservedMemory << " ";
+        --UsedMemory;
+        xp->~X();
         if(typeid(debug_tag) == typeid(TDebugInfoTag))
+        {
+            std::cout << "pointer: " << xp << " "
+                      << UsedMemory << " bytes" <<
+                      " of pull " << capacity << "*" << sizeof (size_type)
+                      << " at " << ReservedMemory << std::endl;
             DebugInfo(FunctionType::destroy);
+        }
         if(typeid(debug_tag) == typeid(TPrettyTag))
             PRETTY_INFO();
-        xp->~X();
-        --UsedMemory;
-    }
-    /**
-     *  The largest value that can be passed to A::allocate().
-     */
-    size_type max_size() {
-        return size_type();
+
     }
 
     /**
@@ -228,16 +218,16 @@ public:
 
 private:
    size_type UsedMemory;
-   pointer ReservedMemory;
+   T* ReservedMemory;
     /**
      * Reserve memory n-blocks sizeof(value_type) length
      * if malloc return nullptr - throw bad_alloc
      * @param n - number of blocks
      */
     [[nodiscard]]
-    pointer TryToReserveMemory(size_t n)
+    T* TryToReserveMemory(size_t n)
     {
-        pointer p = static_cast<pointer>(std::malloc(n * sizeof(value_type)));
+        T* p = static_cast<T*>(std::malloc(n * sizeof(value_type)));
         if (p == nullptr) {
             throw std::bad_alloc();
         }
@@ -247,4 +237,30 @@ private:
      *
      */
 };
+
+/**
+ * ==
+ * @tparam T
+ * @tparam U
+ * @return
+ */
+template<typename T, typename U>
+constexpr bool operator==(const TAllocator<T, 0> &,
+                          const TAllocator<U, 0> &) noexcept
+{
+    return true;
+}
+
+/**
+ * !=
+ * @tparam T
+ * @tparam U
+ * @return
+ */
+template<typename T, typename U>
+constexpr bool operator!=(const TAllocator<T, 0> &,
+                          const TAllocator<U, 0> &) noexcept
+{
+    return false;
+}
 #endif //OTUS_CPP_HW_03_ALLOCATOR_H
